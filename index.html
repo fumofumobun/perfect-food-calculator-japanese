@@ -174,6 +174,13 @@ ol.notes{padding-left:22px}
     <label class="f" for="carbMax">炭水化物の上限（エネルギー比 %）</label>
     <input type="number" id="carbMax" min="50" max="65" step="1" value="52">
     <div class="hint">食事摂取基準の目標量は50〜65%。上限を下げると、GIの高いマルトデキストリンが減り、たんぱく質・脂質が増えます（初期値52%。費用はほぼ変わりません）。この上限では他の基準を満たせない場合は、自動で引き上げて計算します。<span id="carbOut"></span></div>
+    <div class="chk"><input type="checkbox" id="lactoseLimit"><label for="lactoseLimit">乳糖を1食6g以下にする（乳糖が苦手な人向け）</label></div>
+    <div class="hint">脱脂粉乳の乳糖を控えます（乳糖が苦手な人でも多くは1回12〜15gまで問題ないとされる量の半分）。たんぱく質・マグネシウムが足りなくなる場合は、下の「追加で使う食品」をオンにしてください。大豆イソフラボンの上限と両方オンにすると、男性ではコリンが目安量の95%程度にとどまります（コリンの供給源の大豆・きな粉・脱脂粉乳がすべて制限されるため）。</div>
+    <div class="chk"><input type="checkbox" id="isoLimit"><label for="isoLimit">大豆イソフラボンを1日70mg以下にする</label></div>
+    <div class="hint">食品安全委員会の「安全な一日摂取目安量の上限値」（70〜75mg/日）です。オンにすると大豆プロテイン・きな粉が減り、代わりに脱脂粉乳が増えます（乳糖・カルシウムが多くなります）。オフでも摂取量は栄養充足率表に表示します。</div>
+    <label class="f">追加で使う食品（任意・初期設定は不使用）</label>
+    <div id="optFoods"></div>
+    <div class="hint">卵白プロテイン・ホエイプロテイン（WPI）は乳糖・大豆イソフラボンを含まない、やや高価なたんぱく源、カルシウム／マグはマグネシウムを補う錠剤です。オンにしても、計算で必要（または安くなる）な場合だけ使われます。</div>
     <div class="chk"><input type="checkbox" id="efsaB6"><label for="efsaB6">ビタミンB6を欧州の上限（12mg/日）以下にする</label></div>
     <div class="hint">日本の耐容上限量（成人40〜60mg）より厳しい、欧州食品安全機関（EFSA, 2023）の上限です（日本の基準ではありません）。マルチビタミン4粒だけでB6が13mgあるため、オンにする場合は「食品設定」でマルチを「自動」に戻してください（粒数が減り、足りない分を他のサプリで補います）。</div>
     <div class="energy" aria-live="polite">
@@ -298,7 +305,7 @@ ol.notes{padding-left:22px}
           <tr><td>きのこ類</td><td>（植物ではないが）β-グルカン、エルゴチオネイン</td><td>加熱調理して料理に。ビタミンDも含みます。</td></tr>
         </tbody>
       </table></div>
-      <p class="hint">なお、大豆イソフラボンは大豆プロテイン・きな粉から既に多くとれています。大豆イソフラボンのサプリを追加すると過剰になりやすいため（食品安全委員会の評価に基づき、特定保健用食品として食事に上乗せする量の上限は1日30mg〔アグリコン換算〕とされています）、追加は不要です。フィトケミカルは「多いほど良い」ものではないので、いろいろな食品から少量ずつとるのが基本です。</p>
+      <p class="hint">なお、大豆イソフラボンは大豆プロテイン・きな粉に多く含まれるため、食品安全委員会の「安全な一日摂取目安量の上限値」は70〜75mg/日（アグリコン換算）です。条件欄の「大豆イソフラボンを1日70mg以下にする」をオンにするとこれを条件に加えます（初期設定はオフ。オフでも摂取量は栄養充足率表に表示します。大豆プロテインの含有量は製品により差が大きく、計算は平均値です）。いずれの場合も、大豆イソフラボンのサプリや、豆乳・納豆・豆腐などの大豆食品をこの配合に毎日多く足すのは避けてください（納豆1パック45gで約33mg）。フィトケミカルは「多いほど良い」ものではないので、いろいろな食品から少量ずつとるのが基本です。</p>
       <h3 class="h3">腸内環境を整える食品とその他の成分</h3>
       <p class="hint" style="margin-top:0">発酵食品（生きた菌：プロバイオティクス）と、腸内細菌のえさになる食物繊維・オリゴ糖（プレバイオティクス）、植物由来ではない成分の例です。いずれも食事摂取基準に数値がなく、この計算には含まれていません。普段の食事に少しずつ加える場合の目安として載せています。</p>
       <div class="tblwrap"><table id="phytoTbl2">
@@ -363,7 +370,7 @@ ol.notes{padding-left:22px}
         <summary>計算方法</summary>
         <ul class="notes">
           <li>必要エネルギー E ＝ 基礎代謝（Ganpule式）× 身体活動レベル（2025年版：18〜64歳 1.50／1.75／2.00、65〜74歳 1.50／1.70／1.90）。</li>
-          <li><b>最適化の方法：</b>混合整数計画法（ソルバーは HiGHS 1.8.0、ブラウザ内で実行）で、<b>栄養の条件をすべて満たす配合のうち1日の費用が最小のもの</b>を求めます。粉末は0.5g（食塩0.1g）、サプリは0.5粒刻みの整数として扱うので、表示される量がそのまま解です（丸めによるズレはありません）。</li>
+          <li><b>最適化の方法：</b>混合整数計画法（ソルバーは HiGHS 1.8.0、ブラウザ内で実行）で、<b>栄養の条件をすべて満たす配合のうち1日の費用が最小のもの</b>を求めます。粉末は0.5g、サプリは0.5粒刻みの整数として扱うので、表示される量がそのまま解です（丸めによるズレはありません）。</li>
           <li><b>条件（すべて必須）</b>：
             エネルギーは必要量以上・+1%以内（費用最小化で必要量を下回らないよう、下限を必要量ちょうどにしています）。
             全栄養素で推奨量・目安量・目標量の下限以上（たんぱく質は推奨量と目標量下限の大きい方）。
@@ -372,13 +379,13 @@ ol.notes{padding-left:22px}
             耐容上限量以下（マグネシウム・葉酸・ナイアシンはサプリ由来分、ビタミンAはレチノール分）。<b>耐容上限量と商品の1日目安量は、錠剤を多く飲む日（0.5粒刻みを切り上げた粒数。例：1.5粒＝2日で3粒なら2粒の日）の量で守ります</b>（平均では上限内でも、多く飲む日に上限を超えないように）。
             <b>ビタミンA</b>は、食事摂取基準（2025年版）の考え方（サプリの油溶化β-カロテンは生体利用率1/2、2µg＝1µgRAE）で推奨量以上。告示「食事による栄養摂取量の基準」の換算（β-カロテン÷12）による値は、栄養充足率表に参考として併記します。
             <b>ビタミンB6</b>は日本の耐容上限量以下。条件欄でオンにすると、欧州EFSA（2023）の上限12mg/日（食品＋サプリの合計）も条件にします（日本の基準ではありません）。
-            コリンは米国の目安量以上・耐容上限量以下。
+            コリンは米国の目安量以上・耐容上限量以下。条件欄で「乳糖を控える」をオンにすると、乳糖（脱脂粉乳の炭水化物をすべて乳糖とみなす多めの見積り）を1食6g×1日の食数以下。<b>大豆イソフラボン</b>は、条件欄でオンにすると、食品安全委員会の安全な一日摂取目安量の上限値（70〜75mg/日、アグリコン換算）の下限の70mg/日以下（大豆プロテインは米国USDAの分離大豆たんぱくの平均91mg/100g、きな粉は厚生労働省の平均266mg/100gで計算）。含有量は実測値ではなく製品差が大きい（大豆プロテイン46〜199mg、きな粉211〜321mg/100g）ため、栄養充足率表には「推定」の値と、製品差を考えた範囲（最悪ケース）を表示します。オンにしても保証されるのは「推定値で70mg以下」です。
             パラチノースはエネルギー比の指定値（WHOの「10%未満」に収まるよう最大9.5%）を超えない最大量（0.5g刻み、製品の上限量も超えない）。
             マルチビタミン・ミネラル系の製品は1種類だけ。各製品の1日の上限量（サプリは商品の摂取目安量）。固定量が上限量を超える設定は「不成立」と表示します。</li>
           <li><b>検証と表示：</b>計算結果は、最適化とは別の検証関数で全条件と1項目ずつ照合します。状態は「成立」「不成立」「データ不足（供給源のない栄養素がある）」の3つで表示し、1項目でも外れていれば「成立」とは表示しません。条件をすべて満たす配合が存在しない場合に限り、不足・超過の割合を大きな罰則として最小化した配合（緩和解）を表示し、未達の項目と割合をすべて示します。</li>
           <li><b>未測定の値：</b>食品成分表で「-」（未測定）の成分（大豆プロテインのヨウ素・セレン・クロム・モリブデン・ビオチン、脱脂粉乳のマンガン）は0として計算し、栄養充足率表に「未測定（0で計算）」と示します。下限の判定では実際より少なめ（安全側）ですが、上限の判定では過小評価になりうる点に注意してください。純度の高い原料（糖質・油・ビタミンC）とサプリは、表示にない成分を0としています。耐容上限量のある栄養素では、栄養充足率表に「未測定分の余裕」（上限までの残り）を示します。未測定分がこれを超えなければ上限内です。</li>
           <li>検証：Python（SciPy／HiGHS）で同じ条件を解き、さらに製品の生データから摂取量を独立に再計算して、10通りの条件（2,400kcal固定の例を含む）すべてで全条件を満たすことを確認しています。</li>
-          <li><b>HiGHSを読み込めない場合</b>（オフライン・配布サーバーの障害など）は、自動で近似計算に切り替わります。近似計算は連続量の線形計画で解いてから量を丸め、丸めで生じた不足・上限超過を補正する方式です。10通りの条件で比べると、栄養基準はすべて満たしたうえで、費用は厳密解より1日約4〜16円（0.7〜3.6%）高くなりました。</li>
+          <li><b>HiGHSを読み込めない場合</b>（オフライン・配布サーバーの障害など）は、自動で近似計算に切り替わります。近似計算は連続量の線形計画で解いてから量を丸め、丸めで生じた不足・上限超過を補正する方式です。10通りの条件で比べると、栄養基準はすべて満たしたうえで、同じ炭水化物の上限で比べると、費用は厳密解より多くの条件で1日約3〜10円（0.4〜2.1%）、最大で約46円（5.7%）高くなりました（初期設定の場合。条件によっては、炭水化物の上限の引き上げが厳密解より1段階多くなることがあります）。</li>
           <li>サプリメントは0.5粒単位で計算します（0.5粒＝2日に1粒、1.5粒＝2日で3粒）。下限（推奨量など）は2日間の平均で、耐容上限量は多く飲む日の量で判定します。</li>
           <li><b>糖質の配分の比較：</b>「配合量」の「糖質の配分を比べる」で、炭水化物の上限とパラチノースの比率を変えた場合の費用と組成を並べて表示します。血糖値に対する最適な比率は配合比からは決まらないため、比較の材料として使ってください。</li>
           <li>パラチノース（GI値32、消化吸収速度はショ糖の約1/5）は、他の糖質と一緒に摂るとその吸収も遅らせるとされます。ただし二糖類なのでWHOの指針でいう「遊離糖類」に当たり、総エネルギーの10%未満（強い推奨）、できれば5%未満（条件付き推奨）が目安です（牛乳由来の乳糖は対象外。マルトデキストリンは多糖類のため対象外ですが高GIです）。初期値9.5%は「10%未満」の範囲でできるだけ使う設定で、<b>この比率が血糖値に最適だと実測で確かめたものではありません</b>。混合物全体のGIや食後血糖は配合比だけでは決まらないため、気になる場合は実際の血糖測定で確認してください。5%にすると費用は下がりますが、糖質粉末に占める低GI糖の割合は減ります。</li>
@@ -394,7 +401,6 @@ ol.notes{padding-left:22px}
 
         <li>文部科学省「日本食品標準成分表（八訂）増補2023年」きな粉 黄大豆 全粒大豆（04029）：<a href="https://fooddb.mext.go.jp/details/details.pl?ITEM_NO=4_04029_7" target="_blank" rel="noopener">fooddb.mext.go.jp … 4_04029</a></li>
         <li>同 なたね油（14008）：<a href="https://fooddb.mext.go.jp/details/details.pl?ITEM_NO=14_14008_7" target="_blank" rel="noopener">fooddb.mext.go.jp … 14_14008</a></li>
-        <li>同 並塩（17013）：<a href="https://fooddb.mext.go.jp/details/details.pl?ITEM_NO=17_17013_7" target="_blank" rel="noopener">fooddb.mext.go.jp … 17_17013</a></li>
         <li>同 分離大豆たんぱく 塩分無調整タイプ（04057）：<a href="https://fooddb.mext.go.jp/details/details.pl?ITEM_NO=4_04057_7" target="_blank" rel="noopener">fooddb.mext.go.jp … 4_04057</a></li>
         <li>遊離糖類の摂取目安（総エネルギーの10%未満、できれば5%未満）：WHO Guideline: Sugars intake for adults and children（2015）<a href="https://www.who.int/news/item/04-03-2015-who-calls-on-countries-to-reduce-sugars-intake-among-adults-and-children" target="_blank" rel="noopener">WHOプレスリリース</a></li>
         <li>パラチノースのGI値（32）と消化吸収速度：明治「パラチノース」<a href="https://www.meiji.co.jp/meiji-nutrition-info/science/info/palatinose/" target="_blank" rel="noopener">https://www.meiji.co.jp/meiji-nutrition-info/science/info/palatinose/</a></li>
@@ -416,12 +422,12 @@ ol.notes{padding-left:22px}
     <section class="card section">
       <h2>注意事項</h2>
       <ul class="notes">
-        <li><b>医療上の助言ではありません。</b>この計算機は一般的な情報提供を目的としたものです。持病のある方、妊娠・授乳中の方、腎機能が低下している方、薬（特に降圧薬・利尿薬・カリウム保持性の薬など）を服用中の方は、食事の大幅な変更の前に必ず医師・管理栄養士に相談してください。</li>
-          <li><b>アレルギーについて：</b>大豆プロテイン・きな粉（大豆）、DHCパーフェクトサプリ（小麦・乳成分・大豆）、脱脂粉乳（乳）、ビタミンD（パッケージで確認）、ベータカロテン（大豆・ゼラチン）、フィッシュオイル（魚由来原料・ゼラチンの可能性）を含みます。コリン（Nutricost）は特定原材料の表示がありません（植物性カプセル・米粉を使用）。複数製品で同一工場内のコンタミネーション（卵・乳・小麦・大豆・さば・ゼラチン等）の注意表示があります。表中のアレルギー情報は閲覧時点の商品ページ等に基づくもので、原材料や製造ラインは予告なく変わることがあります。<b>食物アレルギーのある方は、必ず購入した商品のパッケージ表示を確認</b>し、心配な場合はその製品を「不使用」にして再計算してください。</li>
+        <li><b>医療上の助言ではありません。</b>この計算機は一般的な情報提供を目的としたものです。持病のある方、妊娠・授乳中の方、腎機能が低下している方、薬（特に降圧薬・利尿薬・カリウム保持性の薬など）を服用中の方は、塩化カリウムの使用、食事の大幅な変更の前に必ず医師・管理栄養士に相談してください。</li>
+          <li><b>アレルギーについて：</b>大豆プロテイン・きな粉（大豆）、DHCパーフェクトサプリ（小麦・乳成分・大豆）、脱脂粉乳（乳）、ビタミンD（パッケージで確認）、ベータカロテン（大豆・ゼラチン）、マルチミネラル（貝カルシウムを含む）、フィッシュオイル（魚由来原料・ゼラチンの可能性）を含みます。コリン（Nutricost）は特定原材料の表示がありません（植物性カプセル・米粉を使用）。複数製品で同一工場内のコンタミネーション（卵・乳・小麦・大豆・さば・ゼラチン等）の注意表示があります。表中のアレルギー情報は閲覧時点の商品ページ等に基づくもので、原材料や製造ラインは予告なく変わることがあります。<b>食物アレルギーのある方は、必ず購入した商品のパッケージ表示を確認</b>し、心配な場合はその製品を「不使用」にして再計算してください。</li>
         <li><b>「完全食」の完全性について：</b>本計算は、食事摂取基準（2025年版）で基準値が定められている栄養素の量を満たすことを目標にしたものであり、健康の維持に必要なすべての成分を満たすことを保証するものではありません。食事摂取基準に数値のない成分（植物由来の機能性成分など。コリンは米国の目安量で評価）、栄養素の吸収率や相互作用、個人差は考慮していません。数値上すべての栄養素が基準を満たしても、食品のヨウ素量やサプリの含有量には製品・ロットによるばらつきがあり、実際の摂取量は計算値と異なる場合があります。この配合だけで長期間生活することの安全性は検証されていません。普段の食事と組み合わせ、体調や体重の変化に注意してください。</li>
         <li><b>免責：</b>栄養成分値は商品表示および日本食品標準成分表の代表値で、実際の製品とは異なる場合があります。価格は変動します。本計算機の利用により生じたいかなる損害についても、作成者は責任を負いません。最終的な判断はご自身の責任で行ってください。</li>
         <li>サプリメントは各商品の1日摂取目安量を上限にしています。目安量を超えて飲まないでください。マグネシウム・葉酸・ナイアシンは、サプリ由来の量が耐容上限量を超えないよう計算しています。</li>
-          <li><b>製品の構成：</b>マルチビタミン＆ミネラル系はDHCパーフェクトサプリの1種類だけにしています（複数登録した場合も、計算は「マルチ系は1種類のみ」の条件で行います）。マルチは商品の目安量どおり1日4粒（2粒ずつ2回）を固定で使い、それだけでは足りないビタミンAはベータカロテン、ビタミンDはビタミンD、モリブデン・マンガン・クロムはきな粉、コリンはコリンのサプリ、ヨウ素・カルシウムは脱脂粉乳、ナトリウムは大豆プロテイン（足りないときは食塩）で補います。カルシウム・マグネシウム・カリウムは脱脂粉乳・大豆食品・マルチでまかないます。たんぱく質は単価の安いSAVEソイプロテイン（1.04円/g）を使います。</li>
+          <li><b>製品の構成：</b>マルチビタミン＆ミネラル系はDHCパーフェクトサプリの1種類だけにしています（複数登録した場合も、計算は「マルチ系は1種類のみ」の条件で行います）。マルチは商品の目安量どおり1日4粒（2粒ずつ2回）を固定で使い、それだけでは足りないビタミンAはベータカロテン、ビタミンDはビタミンD、マンガン・クロムはマルチミネラル（錠剤）、カリウムは塩化カリウム、コリンはコリンのサプリ、ヨウ素・カルシウムは脱脂粉乳で補います。<b>飲みやすさ：</b>きな粉は水に溶けない粒子が多く粉っぽくなるため、1日20g（1食あたり約3g）を上限にしています（「食品設定」で変更できます）。きな粉・脱脂粉乳に頼っていたミネラルを錠剤と塩化カリウムで補うため、脱脂粉乳も少なく（多くの条件で1日40g前後、乳糖は1食あたり3g程度）、費用も下がります。ただし大豆イソフラボンの上限をオンにすると、たんぱく質を脱脂粉乳で補うため脱脂粉乳が増えます。カルシウム・マグネシウム・カリウムは脱脂粉乳・大豆食品・マルチでまかないます。たんぱく質は単価の安いSAVEソイプロテイン（1.04円/g）を使います。</li>
       </ul>
     </section>
   </main>
@@ -536,6 +542,9 @@ const DRI = [
 const REF_NUTRIENTS = [
   { key: 'choline', name: 'コリン', unit: 'mg', M: 550, F: 425, ul: 3500, refKind: '米国の目安量（NIH）',
     src: 'https://ods.od.nih.gov/factsheets/Choline-HealthProfessional/' },
+  // 大豆イソフラボン（アグリコン換算）：食品安全委員会の「安全な一日摂取目安量の上限値」70〜75mg/日の下限側（70mg）。条件欄でオンのときだけ上限にする（下限はない）
+  { key: 'isoflavone', name: '大豆イソフラボン', unit: 'mg', M: null, F: null, ul: 70, refKind: '上限の目安（食品安全委員会）',
+    src: 'https://www.fsc.go.jp/sonota/kikansi/9gou/9gou_1_6.pdf' },
 ];
 
 // 派生値：carbE＝エネルギー−4×たんぱく質−9×脂質（炭水化物のエネルギー。食事摂取基準と同じく「たんぱく質・脂質の残り」として扱い、
@@ -545,7 +554,8 @@ const DERIVED = {
   carbE: p => (p.n.energy || 0) - 4 * (p.n.protein || 0) - 9 * (p.n.fat || 0),
   vitAcons: p => (p.n.vitAcons != null ? p.n.vitAcons : p.n.vitA),
 };
-const NUTRIENT_KEYS = ['energy', ...[...DRI, ...REF_NUTRIENTS].map(d => d.key), 'vitAret', ...Object.keys(DERIVED)];
+const NUTRIENT_KEYS = ['energy', ...[...DRI, ...REF_NUTRIENTS].map(d => d.key), 'vitAret', 'lactose', ...Object.keys(DERIVED)];
+const LACTOSE_PER_MEAL = 6; // 乳糖を控える設定のときの1食あたりの上限（g）。乳糖不耐症でも多くの人が問題なく摂れる12〜15g（Shaukat ほか, 2010）の半分
 const EFSA_B6_UL = 12; // 欧州食品安全機関（2023）の成人の耐容上限量（食品・サプリの合計, mg/日）
 
 // ---- 製品データ（ほしい物リスト） ----
@@ -560,21 +570,22 @@ const S = {
   mhlwVit: 'https://www.mhlw.go.jp/content/10904750/001580154.pdf',
   meijiPala: 'https://www.meiji.co.jp/meiji-nutrition-info/science/info/palatinose/',
   mextOil: 'https://fooddb.mext.go.jp/details/details.pl?ITEM_NO=14_14008_7',
-  mextSalt: 'https://fooddb.mext.go.jp/details/details.pl?ITEM_NO=17_17013_7',
   mextKinako: 'https://fooddb.mext.go.jp/details/details.pl?ITEM_NO=4_04029_7',
   usdaSoyIso: 'https://fdc.nal.usda.gov/food-details/174276/nutrients',
   usdaSoyRoast: 'https://fdc.nal.usda.gov/food-details/172440/nutrients',
+  usdaIso: 'https://www.fao.org/uploads/media/USDA_Isoflavonoid_DB__R2_02.pdf',
+  mhlwIso: 'https://www.mhlw.go.jp/houdou/2006/02/h0202-1a.html',
 };
 const DEFAULT_PRODUCTS = [
   {
     id: 'soysave', name: 'SAVE スーパープライス ソイプロテイン 5kg', short: '大豆プロテイン',
     asin: 'B088QTY63J', price: 5180, size: 5000, per: 'g', mode: 'auto', max: 300,
     basis: 'ラベル＋成分表の推定', unknown: ['biotin', 'iodine', 'se', 'cr', 'mo'],
-    note: '三大栄養素・食塩は商品表示（20gあたり：73kcal、たんぱく質17.2g、脂質0.06g、炭水化物0.92g、食塩相当量0.50g）を100g換算。ミネラル・ビタミンは成分表「分離大豆たんぱく」(04057)を表示たんぱく質量で按分。コリンは日本の成分表に収載がないため、米国USDA「Soy protein isolate」(FDC 174276) の191mg/100gを使用。',
-    srcs: ['amazon', S.mextSoy, S.usdaSoyIso],
+    note: '三大栄養素・食塩は商品表示（20gあたり：73kcal、たんぱく質17.2g、脂質0.06g、炭水化物0.92g、食塩相当量0.50g）を100g換算。ミネラル・ビタミンは成分表「分離大豆たんぱく」(04057)を表示たんぱく質量で按分。コリンは日本の成分表に収載がないため、米国USDA「Soy protein isolate」(FDC 174276) の191mg/100gを使用。大豆イソフラボンは米国USDA「Isoflavone Database」の分離大豆たんぱくの平均91mg/100g（アグリコン換算。製品により46〜199mgと幅がある）。',
+    srcs: ['amazon', S.mextSoy, S.usdaSoyIso, S.usdaIso],
     allergen: '大豆（原材料：分離大豆たんぱく〔中国製造〕、レシチン〔大豆由来〕）。',
     func: '大豆を原料とする植物性たんぱく質（分離大豆たんぱく）。必須アミノ酸をバランスよく含み、たんぱく質は筋肉・臓器・皮膚・酵素・ホルモン・抗体などの材料になります。脂質がほとんどなく、鉄・銅・リン・葉酸なども含みます。大豆イソフラボンを含むため、イソフラボンのサプリとの併用は避けてください。',
-    n: { choline: 191, energy: 365, protein: 86.0, fat: 0.3, sfa: 0.04, n6: 0.09, n3: 0.01, carb: 4.6, fiber: 4.2,
+    isoRange: [46.5, 199.25], n: { isoflavone: 91.05, choline: 191, energy: 365, protein: 86.0, fat: 0.3, sfa: 0.04, n6: 0.09, n3: 0.01, carb: 4.6, fiber: 4.2,
       na: 984, k: 207, ca: 62, mg: 63, p: 913, fe: 10.2, zn: 3.15, cu: 1.64, mn: 0.97,
       vitA: 0, vitD: 0, vitE: 0, vitK: 0, b1: 0.12, b2: 0.15, niacin: 21.7, b6: 0.07, b12: 0, folate: 293, panto: 0.40, vitC: 0 },
   },
@@ -582,11 +593,11 @@ const DEFAULT_PRODUCTS = [
     id: 'skim', name: 'よつ葉 北海道脱脂粉乳 スキムミルク 1kg×6袋', short: '脱脂粉乳',
     asin: 'B0836J97MJ', price: 7680, size: 6000, per: 'g', mode: 'auto', max: 300,
     basis: 'ラベル＋成分表', unknown: ['mn'],
-    note: 'エネルギー・たんぱく質・脂質・炭水化物・ナトリウム・カルシウムは商品表示（100gあたり356kcal、たんぱく質35.6g、脂質0.7g、炭水化物51.8g、ナトリウム432mg、カルシウム1200mg）。その他のミネラル・ビタミンは成分表「脱脂粉乳」(13010) の値（マンガンは成分表で未測定「-」）。脂肪酸とコリンは米国USDA「Milk, dry, nonfat」(FDC 170877) の値を脂質量で換算。価格は2026年10月24日の税込価格。',
+    note: 'エネルギー・たんぱく質・脂質・炭水化物・ナトリウム・カルシウムは商品表示（100gあたり356kcal、たんぱく質35.6g、脂質0.7g、炭水化物51.8g、ナトリウム432mg、カルシウム1200mg）。その他のミネラル・ビタミンは成分表「脱脂粉乳」(13010) の値（マンガンは成分表で未測定「-」）。脂肪酸とコリンは米国USDA「Milk, dry, nonfat」(FDC 170877) の値を脂質量で換算。価格は2026年10月24日の税込価格。乳糖は炭水化物（51.8g）をすべて乳糖とみなした（多めの見積り）。',
     srcs: ['amazon', S.mextSkim, S.usdaSkim],
     allergen: '乳（原材料：生乳）。',
     func: '乳由来のたんぱく質（カゼイン・ホエイ）とカルシウム・カリウム・ビタミンB2・B12・パントテン酸の供給源。乳脂肪を除いた粉乳で、飽和脂肪酸をほとんど含まないため、たんぱく質・カルシウムを飽和脂肪酸を増やさずに補えます。乳の風味でシェイクの味がまろやかになります。',
-    n: { choline: 169, energy: 356, protein: 35.6, fat: 0.7, sfa: 0.45, n6: 0.017, n3: 0.010, carb: 51.8, fiber: 0,
+    n: { lactose: 51.8, choline: 169, energy: 356, protein: 35.6, fat: 0.7, sfa: 0.45, n6: 0.017, n3: 0.010, carb: 51.8, fiber: 0,
       na: 432, k: 1800, ca: 1200, mg: 110, p: 1000, fe: 0.5, zn: 3.9, cu: 0.1, iodine: 120, se: 27, cr: 1, mo: 35,
       vitA: 6, vitAret: 6, vitD: 0, vitE: 0, vitK: 0, b1: 0.30, b2: 1.60, niacin: 9.0, b6: 0.27, b12: 1.8, folate: 1, panto: 4.17, biotin: 19.0, vitC: 5 },
   },
@@ -630,14 +641,14 @@ const DEFAULT_PRODUCTS = [
     n: { energy: 141, protein: 0, fat: 0, sfa: 0, carb: 97, fiber: 82, na: 0 },
   },
   {
-    id: 'salt', name: '伯方の塩（粗塩）1kg', short: '食塩（伯方の塩）',
-    asin: 'B00559VKS2', price: 622, size: 1000, per: 'g', mode: 'auto', max: 3, step: 0.1,
-    basis: '成分表',
-    note: '商品ページに栄養成分表示の記載がないため、成分表「並塩」(17013) の値を使用（ナトリウム38,000mg/100g）。',
-    srcs: ['amazon', S.mextSalt],
-    allergen: '特定原材料等の表示なし（原材料：天日塩・海水）。',
-    func: 'ナトリウムの供給源。ナトリウムは体液量・浸透圧の維持や神経・筋肉の働きに必要です。この配合はナトリウムがほとんど入らないため、推定平均必要量（600mg＝食塩1.5g）を下回らない最小限だけ加えます。',
-    n: { energy: 0, na: 38000, k: 160, ca: 55, mg: 73, cu: 0.02 },
+    id: 'kcl', name: '塩化カリウム KCl 粉末 500g（FOREST-ONE）', short: '塩化カリウム',
+    asin: 'B0CWV5F145', price: 1059, size: 500, per: 'g', mode: 'auto', max: 8, step: 0.1,
+    basis: '純物質（食品添加物規格）',
+    note: 'KCl含量99.5%以上 → カリウム ＝ 99.5% × 39.10/74.55 ≈ 52.2%（計算値）。価格は2026年10月24日の税込価格。',
+    srcs: ['amazon'],
+    allergen: '特定原材料等の表示なし（原材料：塩化カリウム100%）。',
+    func: 'カリウムの供給源。カリウムは細胞内外の水分バランスや神経・筋肉の働きを保ち、ナトリウムの排出を促して血圧の維持に関わります。脱脂粉乳・きな粉を減らして飲みやすくした分のカリウムを、少量の粉で補います。<b>腎機能が低下している人・カリウム保持性利尿薬やACE阻害薬などを服用中の人は、高カリウム血症の危険があるため使わないでください。</b>',
+    n: { energy: 0, k: 52180, na: 0 },
   },
   {
     id: 'multi', group: 'multi', name: 'DHC パーフェクトサプリ マルチビタミン＆ミネラル 20日分（80粒）', short: 'マルチビタミン＆ミネラル',
@@ -653,14 +664,25 @@ const DEFAULT_PRODUCTS = [
       zn: 9.0 / 4, cu: 0.3 / 4, mn: 1.3 / 4, iodine: 43 / 4, se: 9.34 / 4, cr: 3.34 / 4, mo: 8.34 / 4 },
   },
   {
+    id: 'mineral', name: 'DHC マルチミネラル 徳用90日分（270粒）', short: 'マルチミネラル',
+    asin: 'B01MSSWA5K', price: 1353, size: 270, per: 'tab', mode: 'auto', max: 3, supp: true,
+    basis: 'ラベル',
+    note: '商品表示の3粒（1,359mg）あたりの値を1粒換算：熱量1.8kcal、たんぱく質0.04g、脂質0.03g、炭水化物0.34g、食塩相当量0.041g、カルシウム250mg、マグネシウム125mg、鉄7.5mg、亜鉛6.0mg、銅0.6mg、マンガン1.5mg、ヨウ素50.8µg、セレン30.2µg、クロム28.3µg、モリブデン10.5µg。1日3粒が目安。価格は2026年10月24日の税込価格（Amazon販売）。',
+    srcs: ['amazon'],
+    allergen: '原材料に貝カルシウムを含む。パッケージのアレルギー表示を確認してください。',
+    func: 'マンガン・クロムなどの微量ミネラルとカルシウム・マグネシウムの供給源。粉っぽくなりやすいきな粉の代わりに、錠剤でマンガン・クロムを補い、シェイクを飲みやすくします。',
+    n: { energy: 1.8 / 3, protein: 0.04 / 3, fat: 0.03 / 3, carb: 0.34 / 3, na: 16 / 3,
+      ca: 250 / 3, mg: 125 / 3, fe: 7.5 / 3, zn: 6.0 / 3, cu: 0.6 / 3, mn: 1.5 / 3, iodine: 50.8 / 3, se: 30.2 / 3, cr: 28.3 / 3, mo: 10.5 / 3 },
+  },
+  {
     id: 'kinako', name: '真誠 きな粉 1kg', short: 'きな粉',
-    asin: 'B007P0D4UQ', price: 715, size: 1000, per: 'g', mode: 'auto', max: 80,
+    asin: 'B007P0D4UQ', price: 715, size: 1000, per: 'g', mode: 'auto', max: 20,
     basis: '成分表',
-    note: '原材料：きなこ（Amazon販売）。商品ページに栄養成分表示の記載がないため、成分表「きな粉 黄大豆 全粒大豆」(04029) の値を使用（モリブデン380µg/100g）。コリンは米国USDA「Soybeans, mature seeds, roasted」(FDC 172440) の124mg/100gを使用。価格は2026年10月24日の税込価格（送料はAmazonプライムで無料とみなす）。',
-    srcs: ['amazon', S.mextKinako, S.usdaSoyRoast],
+    note: '原材料：きなこ（Amazon販売）。商品ページに栄養成分表示の記載がないため、成分表「きな粉 黄大豆 全粒大豆」(04029) の値を使用（モリブデン380µg/100g）。コリンは米国USDA「Soybeans, mature seeds, roasted」(FDC 172440) の124mg/100gを使用。価格は2026年10月24日の税込価格（送料はAmazonプライムで無料とみなす）。大豆イソフラボンは厚生労働省Q&Aのきな粉の平均266mg/100g（アグリコン換算、211〜321mg）。',
+    srcs: ['amazon', S.mextKinako, S.usdaSoyRoast, S.mhlwIso],
     allergen: '大豆。',
-    func: 'モリブデン（尿酸代謝などに関わる酵素の構成成分）とマンガンの供給源。たんぱく質・食物繊維・マグネシウム・マンガン・n-6系脂肪酸も含みます。香ばしい風味付けにもなり、国内で入手しやすい食品です。',
-    n: { choline: 124, energy: 451, protein: 36.7, fat: 25.7, sfa: 3.59, n6: 12.05, n3: 2.02, carb: 28.5, fiber: 18.1,
+    func: 'モリブデン・マンガン・マグネシウム・食物繊維・n-6系脂肪酸の供給源で、たんぱく質も含みます。香ばしい風味付けにもなります。ただし水に溶けない粒子が多く、多く入れると粉っぽく飲みにくくなるため、上限を1日20g（1食あたり約3g）にしています。マンガン・クロムの不足分はマルチミネラル（錠剤）で補います。',
+    isoRange: [211.1, 321.4], n: { isoflavone: 266.2, choline: 124, energy: 451, protein: 36.7, fat: 25.7, sfa: 3.59, n6: 12.05, n3: 2.02, carb: 28.5, fiber: 18.1,
       na: 1, k: 2000, ca: 190, mg: 260, p: 660, fe: 8.0, zn: 4.1, cu: 1.12, mn: 2.75, iodine: 0, se: 5, cr: 12, mo: 380,
       vitA: 0, vitD: 0, vitE: 1.7, vitK: 27, b1: 0.07, b2: 0.24, niacin: 11.0, b6: 0.52, b12: 0, folate: 220, panto: 1.01, biotin: 31, vitC: 1 },
   },
@@ -683,6 +705,36 @@ const DEFAULT_PRODUCTS = [
     allergen: '特定原材料の表示なし（商品パッケージで確認してください）。',
     func: 'ビタミンDの供給源。カルシウムとリンの吸収を助け、骨や歯の形成・維持に関わります。マルチビタミン4粒（8.5µg）だけでは目安量（9µg）にわずかに足りないため、2日に1粒（平均12.5µg）で補います（耐容上限量は100µg）。',
     n: { energy: 0.96, carb: 0.232, vitD: 25.0 },
+  },
+  {
+    id: 'egg', optional: true, name: 'NICHIGA 卵白プロテイン 1kg', short: '卵白プロテイン',
+    asin: 'B0DFYBYN8B', price: 3900, size: 1000, per: 'g', mode: 'off', max: 150,
+    basis: 'ラベル',
+    note: '商品表示（100gあたり）：エネルギー398kcal、たんぱく質87.4g、脂質0.4g、炭水化物4.4g、食塩相当量1.36g（ナトリウム535mgに換算）。原材料：卵白粉末（ドイツ製造）。乳糖フリー。ミネラル・ビタミンは表示がないため0として計算。価格は2026年10月25日の税込価格。',
+    srcs: ['amazon'],
+    allergen: '卵。',
+    func: '乳糖・大豆イソフラボンを含まないたんぱく質の供給源（任意で使う食品）。「乳糖を控える」「大豆イソフラボンの上限」をオンにしたとき、脱脂粉乳・大豆プロテインの代わりにたんぱく質を補います。卵アレルギーの人は使わないでください。',
+    n: { energy: 398, protein: 87.4, fat: 0.4, carb: 4.4, na: 535 },
+  },
+  {
+    id: 'wpi', optional: true, name: 'SAVE 元祖 WPI ホエイプロテイン プレーン 3kg', short: 'ホエイプロテイン（WPI）',
+    asin: 'B09R1MCH4S', price: 18980, size: 3000, per: 'g', mode: 'off', max: 150,
+    basis: 'ラベル',
+    note: '商品表示（30gあたり）：エネルギー114kcal、たんぱく質26.6g、脂質0.3g、炭水化物0.9g、食塩相当量0.1g を100gあたりに換算。原材料：乳清たんぱく食品（米国製造）、大豆レシチン。乳糖はほとんど含まない（WPI）。ミネラル・ビタミンは表示がないため0として計算。価格は2026年10月25日の税込価格。',
+    srcs: ['amazon'],
+    allergen: '乳・大豆（大豆レシチン）。',
+    func: '乳糖・大豆イソフラボンをほとんど含まないたんぱく質の供給源（任意で使う食品）。溶けやすく、ミルク系の味で飲みやすいのが特長ですが高価です。',
+    n: { energy: 380, protein: 88.67, fat: 1.0, carb: 3.0, na: 131 },
+  },
+  {
+    id: 'calmag', optional: true, name: 'DHC カルシウム／マグ 90日分（270粒）', short: 'カルシウム／マグ',
+    asin: 'B06XW1TNBX', price: 1120, size: 270, per: 'tab', mode: 'off', max: 3, supp: true,
+    basis: 'ラベル',
+    note: '1日3粒（2,043mg）あたり：エネルギー1.9kcal、たんぱく質0.22g、Ca360mg、Mg206mg、ビタミンD2.2µg を1粒換算。価格は2026年10月24日の税込価格。',
+    srcs: ['amazon'],
+    allergen: '乳成分（カゼインホスホペプチド）。原材料にゼラチンを含みます。',
+    func: 'カルシウム・マグネシウム・ビタミンDの供給源（任意で使う食品）。「乳糖を控える」「大豆イソフラボンの上限」をオンにして脱脂粉乳・大豆食品が減ったとき、不足しやすいマグネシウムを補います。',
+    n: { energy: 1.9 / 3, protein: 0.22 / 3, fat: 0.03 / 3, carb: 0.19 / 3, na: 0.61 / 3, ca: 120, mg: 206 / 3, vitD: 2.2 / 3 },
   },
   {
     id: 'fish', name: 'ネイチャーメイド スーパーフィッシュオイル 90粒', short: 'フィッシュオイル',
@@ -761,14 +813,18 @@ function buildTargets(p) {
     T[d.key] = t;
   }
   for (const d of REF_NUTRIENTS) {
+    // 大豆イソフラボンの上限は p.isoLimit のときだけ条件にする（オフのときは refUl として表示だけ）
+    const off = d.key === 'isoflavone' && !p.isoLimit;
     T[d.key] = { key: d.key, name: d.name, unit: d.unit, group: 'ref', lo: d[sx], hi: null, ref: d[sx], refKind: d.refKind, src: d.src,
-      ul: d.ul, ulSuppOnly: false, ulKey: d.key };
+      ul: off ? null : d.ul, refUl: d.ul, ulSuppOnly: false, ulKey: d.key };
   }
   // 補助の条件（表の行は持たず、親の栄養素の行に併記）
   // ビタミンAは食事摂取基準（2025年版）の考え方（サプリの油溶化β-カロテンは2µg＝1µgRAE）で判定する。
   // 告示の換算（β-カロテン÷12）による値は参考として表に併記するだけで、条件にはしない。
   // ビタミンB6：欧州（EFSA 2023）の上限12mg/日（食品＋サプリ）。日本の基準ではないため、p.efsaB6 のときだけ条件にする
   if (p.efsaB6) T.b6efsa = { key: 'b6efsa', metric: 'b6', name: 'ビタミンB6（欧州EFSAの上限12mg）', unit: 'mg', lo: null, hi: null, ul: EFSA_B6_UL, ulKey: 'b6' };
+  // 乳糖：p.lactoseLimit のとき、1食あたり LACTOSE_PER_MEAL g × 1日の食数 を上限にする
+  if (p.lactoseLimit) T.lactose = { key: 'lactose', name: `乳糖（1食${LACTOSE_PER_MEAL}g×${p.meals}食）`, unit: 'g', lo: null, hi: null, ul: LACTOSE_PER_MEAL * p.meals, ulKey: 'lactose' };
   return T;
 }
 
@@ -803,7 +859,7 @@ const ulAmount = (t, tt) => (t.ulSuppOnly ? tt.suppPeak : tt.peak)[t.ulKey];
 
 // ===== 厳密最適化（混合整数計画：HiGHS） =====
 // 目的：栄養基準（下限・目標上限・耐容上限・エネルギー±1%）をすべて満たす中で、1日の費用を最小化。
-// 粉末は0.5g（食塩0.1g）、粒は0.5粒刻みの整数変数として扱うので、丸め後もそのまま最適。
+// 粉末は0.5g（step指定の製品はその刻み）、粒は0.5粒刻みの整数変数として扱うので、丸め後もそのまま最適。
 // まず基準をすべて「必須条件」として解く（偏差変数を0に固定）。それで解がない（実行不可能な）ときだけ、
 // 不足・超過（相対値）を非常に大きな罰則で最小化する緩和問題を解き、relaxed: true を返す（画面で未達を明示）。
 const MILP_BIG = 1e5; // 相対偏差1あたりの罰則（円）。0.001%の不足≒1円
@@ -1083,7 +1139,7 @@ function optimizeLP(products, profile, boost = {}) { // boost：丸めで不足�
   const amounts = {};
   P.forEach((p, j) => {
     let v = x[j];
-    const st = p.step || 0.5; // 粉末0.5g・粒0.5粒（食塩0.1g）単位に丸める
+    const st = p.step || 0.5; // 粉末0.5g・粒0.5粒（step指定の製品はその刻み）単位に丸める
     v = Math.round(Math.round(v / st) * st * 1000) / 1000;
     if (p.mode !== 'fixed' && p.max != null && p.max !== '') v = Math.min(v, Number(p.max));
     amounts[p.id] = Math.max(0, v);
@@ -1179,7 +1235,7 @@ function optimizeApprox(products, profile) {
 }
 
 // Node.js での検証用（ブラウザでは無視される）
-if (typeof module !== 'undefined') module.exports = { peakQ, ulAmount, COMMERCIAL, PAL, DRI, REF_NUTRIENTS, EFSA_B6_UL, metricOf, DEFAULT_PRODUCTS, ageGroupIndex, ganpuleBMR, buildTargets, nutrientOf, totals, buildMILP, milpToLP, optimizeExact, optimizeApprox };
+if (typeof module !== 'undefined') module.exports = { LACTOSE_PER_MEAL, peakQ, ulAmount, COMMERCIAL, PAL, DRI, REF_NUTRIENTS, EFSA_B6_UL, metricOf, DEFAULT_PRODUCTS, ageGroupIndex, ganpuleBMR, buildTargets, nutrientOf, totals, buildMILP, milpToLP, optimizeExact, optimizeApprox };
 </script>
 <script>
 (() => {
@@ -1266,7 +1322,7 @@ function readInputs() {
   return {
     sex: radio('sex'), pal: radio('pal'),
     age: $('#age').value, height: $('#height').value, weight: $('#weight').value,
-    mens: $('#mens').checked, efsaB6: $('#efsaB6').checked, days: $('#days').value, eOverride: $('#eOverride').value, pala: $('#palaPct').value, carbMax: $('#carbMax').value,
+    mens: $('#mens').checked, efsaB6: $('#efsaB6').checked, isoLimit: $('#isoLimit').checked, lactoseLimit: $('#lactoseLimit').checked, days: $('#days').value, eOverride: $('#eOverride').value, pala: $('#palaPct').value, carbMax: $('#carbMax').value,
     meals: $('#meals').value, batch: $('#batch').value,
   };
 }
@@ -1280,6 +1336,8 @@ function restoreInputs(v) {
   $('#mens').checked = !!v.mens;
   if (+$('#palaPct').value > 9.5) $('#palaPct').value = 9.5; // 旧版の保存値（10%）を「10%未満」に合わせる
   if (v.efsaB6 != null) $('#efsaB6').checked = !!v.efsaB6;
+  if (v.isoLimit != null) $('#isoLimit').checked = !!v.isoLimit;
+  if (v.lactoseLimit != null) $('#lactoseLimit').checked = !!v.lactoseLimit;
 }
 restoreInputs(state.inputs);
 
@@ -1296,13 +1354,26 @@ function profile() {
     menstruation: v.sex === 'F' && age < 65 && v.mens,
     days: Math.max(1, +v.days || 30),
     palaPctE: v.pala === '' ? 9.5 : Math.min(9.5, Math.max(0, +v.pala)), // WHOの「10%未満」
-    efsaB6: v.efsaB6,
+    efsaB6: v.efsaB6, isoLimit: v.isoLimit, lactoseLimit: v.lactoseLimit,
+    meals: Math.min(6, Math.max(1, Math.round(+v.meals || 6))),
     carbHiPct: v.carbMax === '' || v.carbMax == null ? 52 : Math.min(65, Math.max(50, +v.carbMax)),
   };
 }
 
+// ===== 任意で使う食品（チェックボックス。オンで「自動」、オフで「不使用」） =====
+function renderOptFoods() {
+  $('#optFoods').innerHTML = state.products.map((p, i) => p.optional
+    ? `<div class="chk"><input type="checkbox" id="opt_${p.id}" data-opt="${i}"${p.mode !== 'off' ? ' checked' : ''}><label for="opt_${p.id}">${esc(p.short || p.name)}を使う<span class="small">（${yen(p.price / p.size * 100)}／100${unitOf(p)}）</span></label></div>` : '').join('');
+}
+$('#optFoods').addEventListener('change', e => {
+  const i = e.target.dataset.opt; if (i == null) return;
+  state.products[+i].mode = e.target.checked ? 'auto' : 'off';
+  renderProdTable(); recalcSoon();
+});
+
 // ===== 食品設定 =====
 function renderProdTable() {
+  renderOptFoods();
   $('#prodTbl tbody').innerHTML = state.products.map((p, i) => {
     const u = unitOf(p);
     const num = (f, w, step = 'any') => `<input type="number" step="${step}" min="0" data-i="${i}" data-f="${f}" value="${p[f] ?? ''}" style="width:${w}px">`;
@@ -1381,18 +1452,19 @@ async function solveOnce(pf) {
   return optimizeApprox(state.products, pf);
 }
 // 炭水化物の上限は血糖値対策の「好み」の設定なので、その上限では基準を満たせないときに限り、段階的に65%Eまで引き上げる。
-// どこまで上げても満たせない（原因が別にある）ときは、指定した上限のままの結果を返す。
+// どこまで上げても満たせない（原因が別にある）ときは、未達の項目が最も少ない結果（同数なら指定した上限に近いもの）を返す。
 async function solve(pf) {
   const caps = [pf.carbHiPct, ...[55, 58, 61, 65].filter(c => c > pf.carbHiPct)];
-  let first = null;
+  let best = null, bestN = Infinity;
   for (const c of caps) {
     const r = await solveOnce({ ...pf, carbHiPct: c });
     if (r.status !== 'optimal') return r;
     r.carbUsed = c;
-    if (!r.relaxed && !unmetOf(r.targets, totals(state.products, r.amounts), pf.energy, state.products).length) return r; // 緩和解はわずかな未達でも不可
-    first = first || r;
+    const n = unmetOf(r.targets, totals(state.products, r.amounts), pf.energy, state.products).length;
+    if (!r.relaxed && !n) return r; // 緩和解はわずかな未達でも不可
+    if (n < bestN) { best = r; bestN = n; }
   }
-  return first;
+  return best;
 }
 // 独立の検証：最適化の結果を、条件（下限・目標上限・耐容上限・エネルギー）と1項目ずつ照合する。
 // 1件でも外れていれば「成立」とは表示しない。供給源がない栄養素も明示する。
@@ -1411,7 +1483,7 @@ function unmetOf(T, tt, E, products = []) {
     const v = tot[metricOf(t)];
     if (t.lo && v < t.lo * 0.9995) list.push(`${t.name} ${(v / t.lo * 100).toFixed(1)}%${v === 0 ? '（供給源なし）' : ''}`);
     if (t.hi != null && v > t.hi * 1.0005) list.push(`${t.name} 目標上限の${(v / t.hi * 100).toFixed(1)}%`);
-    if (t.ul != null && ulAmount(t, tt) > t.ul) list.push(`${t.name} 耐容上限量（${fmt(t.ul)}${t.unit}${t.ulSuppOnly ? '・サプリ由来' : t.ulKey !== t.key && t.ulKey !== metricOf(t) ? '・レチノール' : ''}）超過`);
+    if (t.ul != null && ulAmount(t, tt) > t.ul * 1.0005) list.push(`${t.name} ${DRI.some(d => d.key === t.key) ? '耐容上限量' : '上限'}（${fmt(t.ul)}${t.unit}${t.ulSuppOnly ? '・サプリ由来' : t.ulKey !== t.key && t.ulKey !== metricOf(t) ? '・レチノール' : ''}）超過`);
   }
   return list;
 }
@@ -1443,7 +1515,7 @@ async function recalc() {
   // 状態：成立／成立（参考基準に注意）／不成立／データ不足
   const unmet = unmetOf(T, tt, pf.energy, state.products);
   const noSource = unmet.some(u => u.includes('供給源なし'));
-  const method = res.approx ? '近似計算（HiGHSを使えないため。費用は厳密解より1〜4%程度高くなることがあります）'
+  const method = res.approx ? '近似計算（HiGHSを使えないため。費用は厳密解より数%高くなることがあります）'
     : res.relaxed ? '混合整数計画法（HiGHS）で未達を最小化した緩和解'
     : res.exact ? '混合整数計画法（HiGHS）で費用最小を証明' : '時間内に費用最小を証明できず、その時点の最良解';
   const [state4, cls4] = noSource ? ['データ不足', 'bad'] : unmet.length ? ['不成立', 'bad'] : ['成立', 'ok'];
@@ -1570,9 +1642,24 @@ function renderNutrients(pf, T, am, tt, byId) {
   // 日本の食事摂取基準に数値がない栄養素（海外の基準で評価・最適化の条件にも含める）
   rows.push(`<tr class="grp"><td colspan="9">日本の食事摂取基準に数値がない栄養素（海外の基準で評価）</td></tr>`);
   for (const d of REF_NUTRIENTS) {
-    const t = T[d.key], v = tot[d.key], r = v / t.lo * 100;
-    const [st, cls] = v > t.ul ? ['上限超過', 'bad'] : r >= 99.95 ? ['充足', 'ok'] : ['不足', 'bad'];
-    rows.push(row(d.name, `${t.refKind}${link(t.src, '↗')}`, `${fmt(t.lo)} ${d.unit}`, `${fmt(v)} ${d.unit}`, r, cls, fmt(t.ul), st, d.key));
+    const t = T[d.key], v = tot[d.key], lim = t.ul ?? t.refUl, r = t.lo ? v / t.lo * 100 : v / lim * 100; // 下限のない栄養素（イソフラボン）は上限に対する割合
+    // 上限を条件にしていない（オフの）ときは判定せず、上限欄に目安との比較だけを示す
+    const [st, cls] = t.ul == null ? ['条件オフ', 'na'] : v > t.ul ? ['上限超過', 'bad'] : !t.lo ? ['上限内', 'ok'] : r >= 99.95 ? ['充足', 'ok'] : ['不足', 'bad'];
+    let ulTxt = fmt(lim) + (t.ul == null ? `<div class="small">目安（参考）${v > lim ? '超過' : '以内'}</div>` : '');
+    let intake = `${fmt(v)} ${d.unit}`, stTxt = st;
+    if (d.key === 'isoflavone') {
+      // 含有量は製品差が大きい推定値：製品ごとの範囲から、少ない場合〜多い場合（最悪ケース）を示す
+      const [lo, hi] = used.reduce(([a, b], p) => { const q = am[p.id] || 0, rg = p.isoRange || [p.n.isoflavone || 0, p.n.isoflavone || 0]; return [a + rg[0] * q / 100, b + rg[1] * q / 100]; }, [0, 0]);
+      intake = `推定 ${fmt(v)} ${d.unit}<div class="small">製品差を考えると ${fmt(lo)}〜${fmt(hi)}</div>`;
+      if (t.ul != null && cls === 'ok') { stTxt = '推定で上限内'; if (hi > t.ul) ulTxt += `<div class="small">最悪ケースでは超過</div>`; }
+    }
+    rows.push(row(d.name, `${t.refKind}${link(t.src, '↗')}`, t.lo ? `${fmt(t.lo)} ${d.unit}` : `${fmt(lim)} ${d.unit}以下`, intake, r, cls, ulTxt, stTxt, d.key));
+  }
+  // 乳糖（脱脂粉乳由来）：基準値はないため参考表示。「乳糖を控える」がオンのときは1食あたりの上限で判定
+  {
+    const v = tot.lactose, tl = T.lactose, perMeal = v / pf.meals;
+    const [st, cls] = tl ? (v > tl.ul * 1.0005 ? ['上限超過', 'bad'] : ['上限内', 'ok']) : ['参考', 'na'];
+    rows.push(row('乳糖', tl ? `1食${LACTOSE_PER_MEAL}g以下（乳糖を控える設定）` : '基準値なし（参考）', tl ? `${fmt(tl.ul)} g以下` : '—', `${fmt(v, 1)} g<div class="small">1食あたり ${fmt(perMeal, 1)} g（${pf.meals}食）</div>`, tl ? v / tl.ul * 100 : null, cls, '—', st, 'lactose'));
   }
   $('#nutTbl tbody').innerHTML = rows.join('');
 }
@@ -1630,7 +1717,7 @@ function renderRecipe(am) {
   const steps = [
     `${small ? '0.1g単位で量れる' : ''}デジタルスケール、500mL以上入る密閉できるシェイカー（またはボトル）、混合粉末用の大きめの密閉容器を用意します。`,
     `<b>混合粉末を作る（${days}日分）：</b>①の材料を量ります。${small ? `少量の${small}は、いきなり全体に入れると偏るため、まず同じくらいの量のマルトデキストリン（またはパラチノース）とよく混ぜ、それを倍々に他の粉と混ぜて量を増やしていく「倍散混合」で均一にします。` : ''}最後に全量を容器に入れ、ふたをして1〜2分よく振ります。乾燥剤を入れ、湿気・高温・直射日光を避けて保存します。粒の大きさの違いで分離しやすいので、毎回使う前に容器ごと振ってから量ってください。`,
-    `<b>1食分を作る：</b>シェイカーに先に冷水（${fmt(water)}mL程度）の半量を入れ、混合粉末${g1(perMeal)}gを加えて30秒ほどよく振り、残りの冷水を加えてさらに振ります。冷水では溶けるのにやや時間がかかるので、ダマが残る場合はシェイカーボール（攪拌用の金属ボール）やハンドブレンダーを使うと均一になります。`,
+    `<b>1食分を作る：</b>シェイカーに先に冷水（${fmt(water)}mL程度）の半量を入れ、混合粉末${g1(perMeal)}gを加えて30秒ほどよく振り、残りの冷水を加えてさらに振ります。冷水では溶けるのにやや時間がかかるので、ダマが残る場合はシェイカーボール（攪拌用の金属ボール）やハンドブレンダーを使うと均一になります。${has('kcl') ? '塩化カリウムが完全に溶けたことを確認してから飲みます（粉のまま・濃い液で飲むと胃腸を刺激します。1日分を一度にまとめて飲まないでください）。' : ''}`,
     has('oil') && `<b>油：</b>${esc(byIdName('oil'))}${g1(oilMeal)}gを加え、30秒以上強く振って乳化させます（時間が経つと分離するので飲む直前にも振る）。`,
     `<b>飲み方：</b>10〜20分かけてゆっくり飲みます（一気に飲むより血糖値の上昇が穏やかになります）。${has('dextrin') ? '難消化性デキストリンは一度に多く摂るとお腹がゆるくなることがあるので、慣れるまでは量を減らして数日かけて増やしてください。' : ''}`,
     tabs.length && `<b>サプリメント：</b>${tabs.map(p => `${esc(p.short)} ${tabText(am[p.id])}`).join('、')}を食後に水で飲みます。「2日で3粒」は1粒の日と2粒の日を交互に飲みます（カレンダーやピルケースで管理すると確実です）。脂溶性ビタミンやEPA・DHAは油を含む食事のあとが吸収されやすいとされます。`,
